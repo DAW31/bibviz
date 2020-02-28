@@ -3,9 +3,6 @@
 import sys
 import bibtexparser
 #import unicodecsv as csv
-import csv
-import networkx as nx
-import matplotlib.pyplot as plt
 
 from bibtexparser.bparser import BibTexParser
 from bibtexparser.customization import convert_to_unicode
@@ -13,7 +10,6 @@ from tinydb import TinyDB, Query
 
 titleid=0
 authorid=0
-##G = nx.random_geometric_graph(200, 0.125)
 
 # There is no bibtex file to read
 if len(sys.argv) == 1:
