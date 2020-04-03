@@ -1,132 +1,94 @@
-#!/usr/bin/env python3
+import plotly.graph_objects as go
+import json
+import networkx as nx
+import matplotlib.pyplot as plt
+from tinydb import TinyDB
+with open("db.json", "r") as read_file:
+    data=json.load(read_file)
+G = nx.Graph()
+try:
+    current_number = 1
+    while current_number <=100000000000:
+        current_number = str(current_number)
+        tconnections=str(data['connections'][current_number]['TitleID'])
+        aconnections=str(data['connections'][current_number]['AuthorID'])
+        title=(data['titles'][tconnections]['Title'])
+        author=(data['authors'][aconnections]['Author'])
+        print (title)
+        G.add_node(title,color='red')
+        G.add_node(author,color='green')
+        G.add_edges_from([(author,title)])
+        current_number = int(current_number)
+        current_number += 1
+except:
+    KeyError
+pos = nx.spring_layout(G, k=1.5, iterations=600)
+for n, p in pos.items():
+    color=nx.get_node_attributes(G,'color')
+    G.nodes[n]['pos'] = p
+    G.nodes[n]['color'] = color[n]
 
-import sys
-import bibtexparser
-#import unicodecsv as csv
+edge_trace = go.Scatter(
+    x=[],
+    y=[],
+    line=dict(width=0.5,color='#888'),
+    hoverinfo='none',
+    mode='lines')
+for edge in G.edges():
+    x0, y0 = G.nodes[edge[0]]['pos']
+    x1, y1 = G.nodes[edge[1]]['pos']
+    edge_trace['x'] += tuple([x0, x1, None])
+    edge_trace['y'] += tuple([y0, y1, None])
+node_trace = go.Scatter(
+    x=[],
+    y=[],
+    text=[],
+    mode='markers',
+    hoverinfo='text',
+    marker=dict(
+        showscale=True,
+        colorscale='YlGnBu',
+        reversescale=True,
+        color=[],
+        size=[],
+        colorbar=dict(
+            thickness=10,
+            title='Node Connections',
+            xanchor='left',
+            titleside='right'
+        ),
+        line=dict(width=0)))
 
-from bibtexparser.bparser import BibTexParser
-from bibtexparser.customization import convert_to_unicode
-from tinydb import TinyDB, Query
-
-titleid=0
-authorid=0
-
-# There is no bibtex file to read
-if len(sys.argv) == 1:
-    print("Usage: ", sys.argv[0], " bibtex_file_1.bib bibtex_file_2.bib ... bibtex_file_N.bib");
-# There is at least one bibtex file to read
-else:
-
-    # Create an empty list
-    bib_database_set = [];
-
-    # Process every bibtex file
-    for i in range(1, len(sys.argv)):
-
-        # Open the file is read it into a string
-        with open(sys.argv[i]) as bibtex_file:
-            bibtex_str = bibtex_file.read()
-
-        # Create a bibtex parser
-        parser = BibTexParser()
-        parser.customization = convert_to_unicode
-
-        # Process the string and add the corresponding BibDatabase into the list
-        bib_database_set.append(bibtexparser.loads(bibtex_str, parser=parser));
-
-    # Print the number of BibDatabase objects in bib_database_set
-    print(len(bib_database_set))
-
-    # Record the max number of authors
-    max_number_of_authors = 1;
-
-    # Process all the BibDatabase of the list
-    for bib_database in bib_database_set:
-
-        # Find the number of authors
-        for entry_key in bib_database.entries_dict:
-
-            # Get the authors
-            authors = bib_database.entries_dict[entry_key]['author'];
-
-            # Get the number of authors
-            number_of_authors = authors.count(' and ') + 1;
-
-            # Update the max number of authors
-            max_number_of_authors = max(number_of_authors, max_number_of_authors);
-
-    # Create databaset structure
-    db = TinyDB('db.json')
-    authors_table = db.table('authors')
-    titles_table = db.table('titles')
-    connections_table = db.table('connections')
-
-    # Process all the BibDatabase of the list
-    for bib_database in bib_database_set:
-        #print("Process ", sys.argv[j + 1])
-        # Print the bibtex entry key, author and title of the corresponding BibDatabase object
-        for entry_key in bib_database.entries_dict:
-
-            # This is a paper in a conference:
-            pub_venue="";
-            if bib_database.entries_dict[entry_key]['ENTRYTYPE'] == "inproceedings":
-                pub_venue = bib_database.entries_dict[entry_key]['booktitle'];
-            elif bib_database.entries_dict[entry_key]['ENTRYTYPE'] == "article":
-                pub_venue = bib_database.entries_dict[entry_key]['journal'];
-            else:
-                pub_venue = "Unknown, ask Franck what ";
-                pub_venue += bib_database.entries_dict[entry_key]['ENTRYTYPE'];
-                pub_venue += " is.";
-
-            # Get the year
-            year = bib_database.entries_dict[entry_key]['year'];
-
-            # Get the booktitle
-            booktitle = bib_database.entries_dict[entry_key]['booktitle'];
-
-            # Get the title
-            title = bib_database.entries_dict[entry_key]['title'];
-
-            # Get the authors
-            authors = bib_database.entries_dict[entry_key]['author'];
-
-            # Get the number of authors
-            number_of_authors = authors.count(' and ') + 1;
-
-            titleid=titleid+1
-            titles_table.insert({'TitleID': titleid,'Title': title,'Booktitle': booktitle,'Year': year})
+for node in G.nodes():
+    x, y = G.nodes[node]['pos']
+    node_trace['marker']['color']+=tuple([G.nodes[node]['color']])
+    node_trace['x'] += tuple([x])
+    node_trace['y'] += tuple([y])
+    
+for node, adjacencies in enumerate(G.adjacency()):
+    node_trace['marker']['size']+=tuple([len(adjacencies[1])*8])
+    print ("adj1",adjacencies)
+    node_info = adjacencies[0],' Number of connections: ',str(len(adjacencies[1])),' Connections: ',adjacencies[1]
+    node_trace['text']+=tuple([node_info])
 
 
+fig = go.Figure(data=[edge_trace, node_trace],
+             layout=go.Layout(
+                title='<br>Connections between Bibtex articles',
+                titlefont=dict(size=16),
+                showlegend=False,
+                hovermode='closest',
+                margin=dict(b=20,l=5,r=5,t=40),
+                annotations=[ dict(
+                    text="No. of connections",
+                    showarrow=False,
+                    xref="paper", yref="paper") ],
+                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)))
+fig.show()
 
-            # Find all the authors
-            authors_split = authors.split(' and ');
-            for author in authors_split:
-                name_components = author.split(', ');
-
-                # Look for author ID in authors_table
-                # If author in in, use his/her ID from the table
-
-                # else increment authorid 
-                authorid=authorid+1
-
-                connections_table.insert({'TitleID': titleid,'AuthorID': authorid})
-                #G.add_edge(authorid, titleid)
-                if len(name_components) == 1:
-                    authors_table.insert({'AuthorID': authorid,'Author': author})
-                else:
-                    firstnames = name_components[1].split(' ');
-                    short_name = "";
-                    for firstname in firstnames:
-                        short_name += firstname[0];
-                        short_name += ". ";
-                    short_name += name_components[0];
-                    authors_table.insert({'AuthorID': authorid,'Author': short_name})
-
-            #print("Entry key: ", entry_key)
-
-            print(db);
-            print("Author(s): ", authors);
-            print("Booktitle: ", booktitle);
-            print("Title: ", title);
-            print("Year: ", year);
-            print();
+nx.draw(
+    G,
+    with_labels=True
+)
+plt.show()
