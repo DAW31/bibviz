@@ -1,28 +1,26 @@
 import plotly.graph_objects as go
 import json
 import networkx as nx
-import matplotlib.pyplot as plt
-from tinydb import TinyDB
 with open("db.json", "r") as read_file:
     data=json.load(read_file)
 G = nx.Graph()
+max_number=(len(data['connections']))
 try:
     current_number = 1
-    while current_number <=100000000000:
+    while current_number <= max_number:
         current_number = str(current_number)
         tconnections=str(data['connections'][current_number]['TitleID'])
         aconnections=str(data['connections'][current_number]['AuthorID'])
         title=(data['titles'][tconnections]['Title'])
         author=(data['authors'][aconnections]['Author'])
-        print (title)
         G.add_node(title,color='red')
-        G.add_node(author,color='green')
+        G.add_node(author,color='blue')
         G.add_edges_from([(author,title)])
         current_number = int(current_number)
         current_number += 1
 except:
     KeyError
-pos = nx.spring_layout(G, k=1.5, iterations=600)
+pos = nx.spring_layout(G, dim=2, k=None, pos=None, fixed=None, iterations=50, weight='weight', scale=1.0)
 for n, p in pos.items():
     color=nx.get_node_attributes(G,'color')
     G.nodes[n]['pos'] = p
@@ -59,7 +57,6 @@ for node in G.nodes():
 node_text = []
 for node, adjacencies in enumerate(G.adjacency()):
     node_trace['marker']['size']+=tuple([len(adjacencies[1])*8])
-    print ("adj1",adjacencies[1])
     node_text.append('<b>'+str(adjacencies[0])+'</b><i><br>Number of connections: '+str(len(adjacencies[1]))+"<br>Connections: "+str(adjacencies[1]).replace("{","").replace("}", "").replace(":","").replace("'",""))
     
 node_trace.text = node_text
@@ -68,10 +65,10 @@ node_trace.text = node_text
 fig = go.Figure(data=[edge_trace, node_trace],
              layout=go.Layout(
                 title='<br>Connections between Bibtex articles',
-                titlefont=dict(size=16),
+                titlefont=dict(size=20),
                 showlegend=False,
                 hovermode='closest',
-                margin=dict(b=20,l=5,r=5,t=40),
+                margin=dict(b=5,l=5,r=5,t=5),
                 annotations=[ dict(
                     text="No. of connections",
                     showarrow=False,
@@ -79,9 +76,3 @@ fig = go.Figure(data=[edge_trace, node_trace],
                 xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                 yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)))
 fig.show()
-
-nx.draw(
-    G,
-    with_labels=True
-)
-plt.show()
