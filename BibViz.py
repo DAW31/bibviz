@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import plotly.graph_objects as go
 import json
 import networkx as nx
@@ -53,12 +55,12 @@ for node in G.nodes():
     node_trace['marker']['color']+=tuple([G.nodes[node]['color']])
     node_trace['x'] += tuple([x])
     node_trace['y'] += tuple([y])
-    
+
 node_text = []
 for node, adjacencies in enumerate(G.adjacency()):
     node_trace['marker']['size']+=tuple([len(adjacencies[1])*8])
     node_text.append('<b>'+str(adjacencies[0])+'</b><i><br>Number of connections: '+str(len(adjacencies[1]))+"<br>Connections: "+str(adjacencies[1]).replace("{","").replace("}", "").replace(":","").replace("'",""))
-    
+
 node_trace.text = node_text
 
 
