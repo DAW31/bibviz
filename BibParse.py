@@ -10,6 +10,7 @@ from tinydb import TinyDB, Query, where
 
 titleid=0
 authorid=0
+lastid=0
 
 # There is no bibtex file to read
 if len(sys.argv) == 1:
@@ -55,7 +56,7 @@ else:
             # Update the max number of authors
             max_number_of_authors = max(number_of_authors, max_number_of_authors);
 
-    # Create databaset structure
+    # Create database structure
     db = TinyDB('db.json')
     authors_table = db.table('authors')
     titles_table = db.table('titles')
@@ -92,7 +93,10 @@ else:
             # Get the number of authors
             number_of_authors = authors.count(' and ') + 1;
 
+            # TitleID+1
             titleid=titleid+1
+            
+            #Adds to Title Table (titleid,title,booktitle,year)
             titles_table.insert({'TitleID': titleid,'Title': title,'Booktitle': booktitle,'Year': year})
 
         
@@ -104,25 +108,26 @@ else:
             for author in authors_split:
                 name_components = author.split(', ');
                 print(author)
-                # Look for author ID in authors_table
-                # If author in in, use his/her ID from the table
                 def check(author,authorid):
                     tauthors = db.table("authors")
                     q = Query()
                     print ("Author is ",author)
                     print ("AuthorID is ",authorid)
                     result=tauthors.get(q.Author == author)
+                    #if user exists
                     if result:
                         print ("user exists ",result)
                         IDres=result.doc_id
                         authorid=IDres
+                    #else increment authorid  
                     else:
-                        authorid=authorid+1
+                        global lastid
+                        lastid=lastid+1
+                        authorid=lastid
                         authors_table.insert({'AuthorID': authorid,'Author': author})
+                    
                     return authorid
-                # else increment authorid 
     
-                #G.add_edge(authorid, titleid)
                 if len(name_components) == 1:
                     aid=check(author,authorid)
                     authorid=aid
@@ -137,7 +142,6 @@ else:
                     aid=check(short_name,authorid)
                     authorid=aid
                     connections_table.insert({'TitleID': titleid,'AuthorID': authorid})
-            #print("Entry key: ", entry_key)
 
             print(db);
             print("Author(s): ", authors);

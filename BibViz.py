@@ -3,10 +3,11 @@
 import plotly.graph_objects as go
 import json
 import networkx as nx
+#opens database
 with open("db.json", "r") as read_file:
     data=json.load(read_file)
-G = nx.Graph()
-max_number=(len(data['connections']))
+G = nx.Graph() #create new graph
+max_number=(len(data['connections'])) #max number is the maxiumum of connections
 try:
     current_number = 1
     while current_number <= max_number:
@@ -34,11 +35,13 @@ edge_trace = go.Scatter(
     line=dict(width=0.5,color='#888'),
     hoverinfo='none',
     mode='lines')
+
 for edge in G.edges():
     x0, y0 = G.nodes[edge[0]]['pos']
     x1, y1 = G.nodes[edge[1]]['pos']
     edge_trace['x'] += tuple([x0, x1, None])
     edge_trace['y'] += tuple([y0, y1, None])
+    
 node_trace = go.Scatter(
     x=[],
     y=[],
@@ -59,16 +62,17 @@ for node in G.nodes():
 node_text = []
 for node, adjacencies in enumerate(G.adjacency()):
     node_trace['marker']['size']+=tuple([len(adjacencies[1])*8])
-    node_text.append('<b>'+str(adjacencies[0])+'</b><i><br>Number of connections: '+str(len(adjacencies[1]))+"<br>Connections: "+str(adjacencies[1]).replace("{","").replace("}", "").replace(":","").replace("'",""))
+    node_text.append('<b>'+str(adjacencies[0])+'</b><i><br>Number of connections: '+str(len(adjacencies[1]))+"<br>Connections: "+str(adjacencies[1]).replace("{","<br>").replace("}", "").replace(":","").replace("'","").replace(",", ""))
 
 node_trace.text = node_text
 
-
+print(node_trace)
+print(edge_trace)
 fig = go.Figure(data=[edge_trace, node_trace],
              layout=go.Layout(
-                title='<br>Connections between Bibtex articles',
+                title='<br>Connections in BibTeX Databases',
                 titlefont=dict(size=20),
-                showlegend=False,
+                showlegend=True,
                 hovermode='closest',
                 margin=dict(b=5,l=5,r=5,t=5),
                 annotations=[ dict(
