@@ -17,7 +17,7 @@ Implemented using Python
     </tr>
   <tr>
         <td valign="top"><img src="images/db.png" alt="" width="80px" /></td>
-        <td valign="middle">a Network visualization of viewing connections between Authors and titles in BibTeX databases.  </td>
+        <td valign="middle">Network visualization of viewing connections between Authors and titles in BibTeX databases.  </td>
     </tr>
   <tr>
         <td valign="top"><img src="images/vis.png" alt="" width="80px" /></td>
